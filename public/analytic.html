@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Bar Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Bar Chart Based on Cooked Time and Location</h1>
+    <canvas id="myChart"></canvas>
+    <script>
+        window.onload = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/analytics');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const users = await response.json();
+        
+                // Aggregate counts for unique locations
+                const locationCounts = {};
+                users.forEach(user => {
+                    const location = user.location;
+                    if (locationCounts[location]) {
+                        locationCounts[location]++;
+                    } else {
+                        locationCounts[location] = 1;
+                    }
+                });
+        
+                // Extract labels and data for chart
+                const labels = Object.keys(locationCounts);
+                const data = Object.values(locationCounts);
+        
+                // Display chart
+                const ctx = document.getElementById('myChart').getContext('2d');
+                const myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Meal Count',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Count'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Meal Counts by Location'
+                            }
+                        }
+                    }
+                });
+        
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        };
+        
+        
+    </script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Bar Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Bar Chart Based on Cooked Time and Location</h1>
+    <canvas id="myChart"></canvas>
+    <script>
+        window.onload = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/analytics');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const users = await response.json();
+    
+                // Prepare data for the chart
+                const labels = users.map(user => user.address); // Using address as labels
+                const cookedTimes = users.map(user => new Date(user.cooked_time).getTime()); // Convert cooked_time to timestamps for comparison
+    
+                // Prepare background colors based on veg or non-veg
+                const backgroundColors = users.map(user => user.veg_or_non_veg === 'veg' ? 'rgba(75, 192, 192, 0.2)' : 'rgba(255, 99, 132, 0.2)');
+                const borderColors = users.map(user => user.veg_or_non_veg === 'veg' ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)');
+    
+                // Create the bar chart
+                const ctx = document.getElementById('myChart').getContext('2d');
+                const myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Cooked Time (timestamp)',
+                            data: cookedTimes,
+                            backgroundColor: backgroundColors,
+                            borderColor: borderColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Timestamp'
+                                }
+                            }
+                        }
+                    }
+                });
+    
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        };
+    </script>
+</body>
+</html> -->

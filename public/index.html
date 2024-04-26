@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details</title>
+    <style>
+        /* styles.css */
+    
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color:#94bbe9
+        }
+    
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+          
+            padding: 20px;
+        }
+    
+        .card {
+            width: 300px;
+            background-color: #2c3e50; /* Updated card color */
+            border-radius: 15px;
+            margin: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+    
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        }
+    
+        .order-details {
+            color: #ffffff; /* Text color updated for contrast */
+        }
+ .order-details p {
+        margin: 5px 0;
+        color: #e1e1e1; /* Text color updated for contrast */
+        font-family: 'Poppins', sans-serif; /* New font */
+        font-size: 14px; /* Adjust font size */
+        line-height: 1.6; /* Adjust line height for readability */
+    }
+        .order-details hr {
+            margin: 10px 0;
+            border: none;
+            border-top: 1px solid #444444; /* HR color updated for contrast */
+        }
+    
+        /* New Font */
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+    
+        body {
+            font-family: 'Open Sans', sans-serif;
+        }
+    
+        /* Additional Customizations */
+    
+        /* Card Background and Box Shadow */
+        .card {
+            background-color: #2c3e50; /* Updated card color */
+            border: 1px solid #34495e; /* Updated border color for contrast */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* Hover Effect and Box Shadow */
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar {
+            background-color: #333;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+        .navbar ul li {
+            padding: 5px 10px;
+        }
+        .navbar ul li a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar ul li:hover {
+            background-color: #555;
+            border-radius: 5px;
+        }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            flex-grow: 0.2;
+            margin-left: 20px;
+        }
+        .search-bar input[type="text"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .search-bar button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            background-color: #555;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+    </style>
+    
+    
+</head>
+<body>
+    <div class="navbar">
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="/analyticpage">Analytics</a></li>
+            <li><a href="/users">total users</a></li>
+            <li><a href="/upload">Upload</a></li>
+        </ul>
+        <div class="search-bar">
+            <input type="text" placeholder="Search...">
+            <button>Search</button>
+        </div>
+    </div>
+
+    <div class="container">
+       
+       
+ 
+    </div>
+
+    <script>
+        window.onload = async () => {
+            try {
+                // Make a GET request to your backend API
+                const response = await fetch('http://localhost:5000/userdata');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                // Convert the response payload into JSON object
+                const users = await response.json();
+    
+                const container = document.querySelector('.container');
+    
+                // Dynamically create card elements for each user
+                users.forEach(user => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+    
+                    let cardHtml = `
+                        <div class="order-details">
+                            <p><strong>Mobile Number:</strong> ${user.mobile_number}</p>
+                            <hr>
+                            <p><strong>Name:</strong> ${user.name}</p>
+                            <p><strong>Email:</strong> ${user.email}</p>
+                            <p><strong>Location:</strong> ${user.address}</p>
+                            <p><strong>Veg or Non-Veg:</strong> ${user.veg_or_non_veg}</p>
+                            <p><strong>Cooked Time:</strong> ${user.cooked_time}</p>
+                        </div>
+                    `;
+    
+                    card.innerHTML = cardHtml;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        };
+    </script>
+    
+</body>
+</html>
