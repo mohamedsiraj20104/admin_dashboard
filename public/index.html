@@ -200,6 +200,7 @@
                     }
                     // Convert the response payload into JSON object
                     const users = await response.json();
+                     console.log(users)
         
                     const container = document.querySelector('.container');
         
@@ -222,6 +223,7 @@
         
                         card.innerHTML = cardHtml;
                         container.appendChild(card);
+                       
                     });
                 } catch (error) {
                     console.error('Fetch error:', error);
