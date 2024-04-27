@@ -119,6 +119,54 @@
                 color: #fff;
                 cursor: pointer;
             }
+
+            /* Existing styles above this */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .navbar .menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .navbar-nav {
+        width: 100%;
+        display: none;
+        flex-direction: column;
+        align-items: start;
+    }
+
+    .navbar-nav.active {
+        display: flex;
+    }
+
+    .navbar ul {
+        width: 100%;
+    }
+
+    .navbar ul li {
+        width: 100%;
+        text-align: left;
+    }
+
+    .search-bar {
+        width: 100%;
+        margin-top: 10px;
+        margin-left: 0;
+    }
+}
+
+/* More styles if needed */
+
             
         </style>
         
@@ -126,10 +174,11 @@
     </head>
     <body>
         <div class="navbar">
-            <ul>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <ul class="navbar-nav">
                 <li><a href="#">Home</a></li>
                 <li><a href="/analyticpage">Analytics</a></li>
-                <li><a href="/users">total users</a></li>
+                <li><a href="/users">Total Users</a></li>
                 <li><a href="/upload">Upload</a></li>
             </ul>
             <div class="search-bar">
@@ -137,13 +186,10 @@
                 <button>Search</button>
             </div>
         </div>
-
-        <div class="container">
-        
-        
     
+        <div class="container">
+            <!-- Content here -->
         </div>
-
         <script>
             window.onload = async () => {
                 try {
@@ -181,6 +227,11 @@
                     console.error('Fetch error:', error);
                 }
             };
+
+            function toggleMenu() {
+                const navbarNav = document.querySelector('.navbar-nav');
+                navbarNav.classList.toggle('active');
+            }
         </script>
         
     </body>
