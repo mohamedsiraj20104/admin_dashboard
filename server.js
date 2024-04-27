@@ -1,76 +1,157 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const cors = require('cors'); // Added CORS middleware
-const path = require('path');
-const axios = require('axios')
-
-
+const { MongoClient } = require('mongodb');
+const path = require('path');  // Add this line
 const app = express();
-const PORT = 3000;
-
-// Connect to MongoDB
+const axios = require('axios')
+const port = 5000;
+const cors = require('cors')
+// Replace YOUR_MONGODB_CONNECTION_STRING with your MongoDB connection string
 const mongoURI = 'mongodb+srv://siraj:2FJ63FMlPnQHHpcT@cluster0.xxdhvm1.mongodb.net/LOGIN_DB?retryWrites=true&w=majority';
 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('Connected to MongoDB');
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err);
-  });
+// Connect to MongoDB
+const client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 
-  const userSchema = new mongoose.Schema({
-    name: String,
-    email: String,
-    location: String,
-    mobile_number: String,
-    veg_or_non_veg: String,
-    cooked_time: String,
-    address: String, // Add an address field
-  });
-  
-const User = mongoose.model('User', userSchema);
-
-app.use(cors()); // Enable CORS
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.options('*', cors()); // Handle CORS preflight requests
-
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(cors())
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/submitForm', async (req, res) => {
-  const { name, email, location, mobile_number, veg_or_non_veg, cooked_time } = req.body;
+// Route to get user locations
+app.get('/userdata', async (req, res) => {
+    try {
+      // Connect to the MongoDB database
+      const client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+      await client.connect();
   
-  // Split the location into latitude and longitude
-  const lati_and_longi = location.split(',');
+      // Access the "users" collection in the "LOGIN_DB" database
+      const database = client.db("LOGIN_DB");
+      const collection = database.collection("users");
+  
+      // Fetch all user documents from the "users" collection
+      const users = await collection.find().toArray();
+  
+      // Close the MongoDB connection
+      await client.close();
+  
+      console.log('User data:', users);
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
 
-  try {
-    // Call the geolocation API
-    const geoResponse = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${lati_and_longi[0]}&lon=${lati_and_longi[1]}&format=json`);
-    const address = geoResponse.data.display_name;
 
-    // Create a new user with the resolved address
-    const user = new User({
-      name, email, location, mobile_number, veg_or_non_veg, cooked_time, address
-    });
+app.post('/api/deleteLocation', async (req, res) => {
+    const { latitude, longitude } = req.body;
 
-    const result = await user.save();
-    console.log('User saved with address:', result);
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error saving user or fetching address:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
-  }
+    try {
+        await client.connect();
+        const database = client.db("LOGIN_DB");
+        const collection = database.collection("users");
+
+        // Delete the document with the specified latitude and longitude
+        const result = await collection.deleteOne({ location: `${latitude}, ${longitude}` });
+
+        if (result.deletedCount > 0) {
+            res.json({ message: 'Location deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'Location not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting location:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+        await client.close();
+    }
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+app.get('/analyticpage', (req,res)=>{
+    res.sendFile(path.join(__dirname, 'public', 'analytic.html'));
+})
+
+app.get('/users', async (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'users.html'));
+});
+
+
+app.get('/totalusers', async (req, res)=>{
+    try {
+        // Connect to the MongoDB client
+        await client.connect();
+        const database = client.db("LOGIN_DB");
+        const collection = database.collection("users");
+
+        // Count the total number of documents in the "users" collection
+        const totalUsers = await collection.countDocuments();
+
+        // You could also send this data back to the client
+        console.log(`Total number of users: ${totalUsers}`);
+        res.json({ totalUsers: totalUsers });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+        // It's important to close the client connection
+        await client.close();
+    }
+
+})
+
+app.get('/analytics', async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db("LOGIN_DB");
+        const collection = database.collection("users");
+
+        // Fetch all user documents with location
+        const userdata = await collection.find().toArray();
+
+        // Array to store promises
+        const axiosPromises = [];
+
+        for(let data of userdata) {
+
+            const lati_and_longi = data.location.split(',');
+
+            const axiosPromise = axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${lati_and_longi[0]}&lon=${lati_and_longi[1]}&format=json`)
+                .then(response => {
+                    // Handle success
+                    console.log('Response:', response.data.display_name);
+                    // Add address to user data
+                    data.address = response.data.display_name;
+                })
+                .catch(error => {
+                    // Handle error
+                    console.error('Error:', error);
+                });
+
+            console.log(axiosPromise , "response after api ")
+            axiosPromises.push(axiosPromise);
+        }
+
+        // Wait for all Axios requests to complete
+        await Promise.all(axiosPromises);
+
+        // Send response with updated user data
+        console.log(userdata, "anaylytics")
+        res.json(userdata);
+        
+       
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    } finally {
+        await client.close();
+    }
+});
+
+// Serve the HTML file
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
