@@ -18,56 +18,80 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+
 // Route to get user locations
+
 app.get('/userdata', async (req, res) => {
-    try {
-      // Connect to the MongoDB database
-      const client = new MongoClient(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-      await client.connect();
-  
-      // Access the "users" collection in the "LOGIN_DB" database
-      const database = client.db("LOGIN_DB");
-      const collection = database.collection("users");
-  
-      // Fetch all user documents from the "users" collection
-      const users = await collection.find().toArray();
-  
-      // Close the MongoDB connection
-      await client.close();
-  
-      console.log('User data:', users);
-      res.json(users);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });
-  
-
-
-app.post('/api/deleteLocation', async (req, res) => {
-    const { latitude, longitude } = req.body;
-
     try {
         await client.connect();
         const database = client.db("LOGIN_DB");
         const collection = database.collection("users");
 
-        // Delete the document with the specified latitude and longitude
-        const result = await collection.deleteOne({ location: `${latitude}, ${longitude}` });
+        // Fetch all user documents with location
+        const userdata = await collection.find().toArray();
 
-        if (result.deletedCount > 0) {
-            res.json({ message: 'Location deleted successfully' });
-        } else {
-            res.status(404).json({ error: 'Location not found' });
+        // Array to store promises
+        const axiosPromises = [];
+
+        for(let data of userdata) {
+            const lati_and_longi = data.location.split(',');
+
+            const axiosPromise = axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${lati_and_longi[0]}&lon=${lati_and_longi[1]}&format=json`)
+                .then(response => {
+                    // Handle success
+                    console.log('Response:', response.data.display_name);
+                    // Update user data with the new address
+                    data.address = response.data.display_name;
+                    // Update user data in the database
+                    return collection.updateOne({ _id: data._id }, { $set: { address: response.data.display_name } });
+                })
+                .catch(error => {
+                    // Handle error
+                    console.error('Error:', error);
+                });
+
+            axiosPromises.push(axiosPromise);
         }
+
+        // Wait for all Axios requests to complete
+        await Promise.all(axiosPromises);
+
+        // Send response with updated user data
+        console.log(userdata, "userdata")
+        res.json(userdata);
+        
     } catch (error) {
-        console.error('Error deleting location:', error);
+        console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     } finally {
         await client.close();
     }
 });
+
+app.get('/userdetails', async (req, res) => {
+    try {
+        await client.connect();
+        const database = client.db("LOGIN_DB");
+        const collection = database.collection("users");
+
+        // Fetch all user documents
+        const userdata = await collection.find().toArray();
+
+        // Close the database connection
+        await client.close();
+
+        // Send the user data as a response
+        res.json(userdata);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 
 app.get('/analyticpage', (req,res)=>{
